@@ -35,6 +35,7 @@ func startCacheServer(addr string, addrs []string, gee *geecache.Group) {
 }
 
 func startAPIServer(apiAddr string, gee *geecache.Group) {
+	//TODO 拆分成api启动和cache
 	http.Handle("/api", http.HandlerFunc(
 		func(w http.ResponseWriter, r *http.Request) {
 			key := r.URL.Query().Get("key")
