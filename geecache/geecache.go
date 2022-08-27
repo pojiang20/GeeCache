@@ -49,6 +49,20 @@ func (g *Group) load(key string) (value ByteView, err error) {
 			}
 		}
 		return g.getLocally(key)
+		//if g.peers !=nil {
+		//	if peerGetter,ok :=g.peers.PickPeer(key); ok {
+		//		req := &pb.Request{
+		//			Key: key,
+		//			Group: g.name,
+		//		}
+		//		res := &pb.Response{}
+		//		if err := peerGetter.Get(req,res);err == nil {
+		//			return ByteView{b:res.Value},nil
+		//		}else {
+		//			return ByteView{},err
+		//		}
+		//	}
+		//}
 	})
 	if err == nil {
 		return viewi.(ByteView), nil
