@@ -32,6 +32,7 @@ func (m *Map) Add(keys ...string) {
 		//rep为虚节点
 		for i := 0; i < m.replicas; i++ {
 			hash := int(m.hash([]byte(strconv.Itoa(i) + key)))
+			//keys存储实+虚节点
 			m.keys = append(m.keys, hash)
 			//虚节点hash添加映射到key
 			m.hashMap[hash] = key
