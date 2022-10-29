@@ -66,6 +66,7 @@ func New(replicas int, fn Hash) *Map {
 ```
 可能由于映射的不均匀导致存储节点的存储不均匀，可以将存储节点再次映射，比如`p1`位置的存储节点`A`映射为`p11`、`p12`、`p13`三个节点，顺时针最近到该三个坐标的映射都存储到`A`中。
 ![image.png](./img/gecache_readme.png)
+
 添加节点：`keys`是包含虚节点的所有节点，`hashMap`是虚拟节点到真实节点的映射。可以看到在`Add`的过程中，每个`key`构造出了`replicas`个虚拟节点，`hashMap`可知他们都映射到`key`。
 ```go
 // Add adds some keys to the hash.
