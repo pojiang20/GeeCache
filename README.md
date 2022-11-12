@@ -4,7 +4,7 @@
 该项目主要参考[https://geektutu.com/post/geecache-day7.html](https://geektutu.com/post/geecache-day7.html)
 以空间换时间是软件工程中的一种经典思维，其中一个节点例子就是通过分配空间来缓存部分请求频率高的数据，达到加快请求响应效果。与此同时，引入一种方法通常同时会带来一些问题。`GeeCache`简单的说明了如何处理部分问题。
 #### 项目概述
-项目的基本逻辑如下，节点接收`key`，先查看本地缓存是否存在`value`，存在则返回不存在则向其他节点（一致性哈希）获取。其他节点存在则返回缓存值，否则调用回调函数（统一回调函数接口）来获取值并且加入缓存（`LRU`）。
+项目的基本逻辑如下，节点接收`key`，先查看本地缓存是否存在`value`，存在则返回不存在则向其他节点（一致性哈希）获取。其他节点存在则返回缓存值，否则调用回调函数（如访问DB）来获取值并且加入缓存（`LRU`）。
 ```go
                          是
 接收 key --> 检查是否被缓存 -----> 返回缓存值 ⑴
@@ -13,6 +13,42 @@
                             |  否
                             |-----> 调用`回调函数`，获取值并添加到缓存 --> 返回缓存值 ⑶
 ```
+```go
+func (g *Group) Get(key string) (ByteView, error) {
+	if key == "" {
+		return ByteView{}, fmt.Errorf("key is required")
+	}
+	
+	//本机缓存
+	if v, ok := g.mainCache.get(key); ok {
+		log.Println("[GeeCache] hint")
+		return v, nil
+	}
+	//其他节点缓存
+	return g.load(key)
+}
+
+func (g *Group) load(key string) (value ByteView, err error) {
+	viewi, err := g.loader.Do(key, func() (interface{}, error) {
+		if g.peers != nil {
+			//一致性哈希映射查找节点
+			if peer, ok := g.peers.PickPeer(key); ok {
+				if value, err = g.getFromPeer(peer, key); err == nil {
+					return value, nil
+				}
+				log.Println("[GeeCache] Failed to get from peer", err)
+			}
+		}
+		//回调函数访问本地DB
+		return g.getLocally(key)
+	})
+	if err == nil {
+		return viewi.(ByteView), nil
+	}
+	return
+}
+```
+
 #### 缓存淘汰
 一定空间内添加缓存，一定会需要淘汰策略。这里使用`LRU`，基本思想是维护一个双链表，表头是最新节点，表尾是最旧节点，头部插入新访问节点、尾部删除旧节点。
 [https://leetcode.cn/problems/lru-cache/](https://leetcode.cn/problems/lru-cache/)
